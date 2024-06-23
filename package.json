@@ -1,12 +1,15 @@
 {
   "name": "@wp-wipe/bundler",
-  "version": "0.1",
-  "main": "index.js",
+  "version": "0.2.0",
+  "description": "README.md",
+  "license": "ISC",
+  "main": "dist/index.es.js",
   "bin": {
-    "wpwipe": "./dist/wpwipe.js"
+    "wpwipe": "dist/wpwipe.js"
   },
   "scripts": {
-    "build": "node ./builder"
+    "build": "node ./builder",
+    "publish": "npm run build && npm publish"
   },
   "keywords": [
     "wordpress",
@@ -16,8 +19,6 @@
     "esbuild"
   ],
   "author": "Simon Mongeau",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "chokidar": "^3.6.0",
     "esbuild": "^0.21.5",
