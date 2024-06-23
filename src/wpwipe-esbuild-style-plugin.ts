@@ -1,7 +1,6 @@
 import { Plugin } from "esbuild";
 import fs from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { readdirSync, statSync, readFileSync } from "fs";
+import { readdirSync, statSync, readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import tailwindcss from "tailwindcss";
 import postcss from "postcss";
@@ -53,7 +52,7 @@ export function wpWipeEsBuildStyle(options?: { tailwindPrefix: string }): Plugin
         if (args.path.includes("node_modules")) return;
 
         const contents = await fs.readFile(args.path, "utf8");
-        if (contents.indexOf("@blocks") == -1 && contents.indexOf("@tailwind") == -1) return; 
+        if (contents.indexOf("@blocks") == -1 && contents.indexOf("@tailwind") == -1) return;
 
         const resolveDir = args.path.split("/").slice(0, -1).join("/");
         let newContent = contents;
@@ -66,13 +65,12 @@ export function wpWipeEsBuildStyle(options?: { tailwindPrefix: string }): Plugin
         if (newContent.indexOf("@tailwind;") !== -1) {
           let tailwindContent = await buildTailwindCss(args.path);
           if (options?.tailwindPrefix) {
-            
-            tailwindContent = `${options?.tailwindPrefix} {${tailwindContent}}`
+            tailwindContent = `${options?.tailwindPrefix} {${tailwindContent}}`;
           }
 
           newContent = newContent.replace("@tailwind;", tailwindContent);
         }
-        
+
         newContent = sass
           .compileString(newContent, {
             loadPaths: [path.resolve(args.path).split("/").slice(0, -1).join("/")],

@@ -37,6 +37,7 @@ module.exports = __toCommonJS(build_exports);
 // src/build-back-end.ts
 var import_esbuild = require("esbuild");
 var import_glob = require("glob");
+var import_fs2 = require("fs");
 
 // src/wpwipe-esbuild-imports-plugin.ts
 var import_promises = __toESM(require("fs/promises"));
@@ -120,7 +121,6 @@ function wpWipeEsBuildImports() {
 
 // src/wpwipe-esbuild-style-plugin.ts
 var import_promises2 = __toESM(require("fs/promises"));
-var import_node_fs = require("fs");
 var import_fs = require("fs");
 var import_path = require("path");
 var import_tailwindcss = __toESM(require("tailwindcss"));
@@ -143,7 +143,7 @@ async function buildTailwindCss(filename) {
   const folders = import_path2.default.resolve(filename).split("/");
   while (folders.length > 0) {
     const folder = folders.join("/");
-    if ((0, import_node_fs.existsSync)(folder + "/tailwind.config.js")) {
+    if ((0, import_fs.existsSync)(folder + "/tailwind.config.js")) {
       from = folder + "/tailwind.config.js";
       break;
     }
@@ -226,16 +226,22 @@ async function buildBackEnd(options) {
   const key = switchKey.key;
   const blocks = [...import_glob.glob.sync("./blocks/**/*.block.[jt]sx"), ...import_glob.glob.sync("./blocks/**/*.block.[jt]s")];
   const time = timer();
+  let entryPoints = options.adminFolder;
+  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+  let outName = entryPoints.split("/").pop();
+  outName = (outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".")) + ".js";
+  if (!(0, import_fs2.existsSync)(entryPoints)) return;
   await (0, import_esbuild.build)({
     stdin: {
       contents: `
-          import './src/admin/admin.ts';
+          import './${entryPoints}';
           ${blocks.map((block) => `import './${block}'`).join(";\n")}
           `,
       resolveDir: "./",
       loader: "ts"
     },
-    outfile: options.outFolder + "/admin.js",
+    outfile: options.outFolder + "/" + outName,
     minify: options.minimify,
     bundle: true,
     loader: {
@@ -244,10 +250,7 @@ async function buildBackEnd(options) {
     },
     jsxFactory: "window.wp.element.createElement",
     jsxFragment: "window.wp.element.Fragment",
-    plugins: [
-      wpWipeEsBuildImports(),
-      wpWipeEsBuildStyle()
-    ],
+    plugins: [wpWipeEsBuildImports(), wpWipeEsBuildStyle()],
     format: "iife"
   }).then(() => {
     if (key === switchKey.key) {
@@ -259,12 +262,19 @@ async function buildBackEnd(options) {
 
 // src/build-front-end.ts
 var import_esbuild2 = require("esbuild");
+var import_fs3 = require("fs");
 async function buildFrontEnd(options) {
   const key = switchKey.key;
   const time = timer();
+  let entryPoints = options.publicFolder;
+  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+  let outName = entryPoints.split("/").pop();
+  outName = (outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".")) + ".js";
+  if (!(0, import_fs3.existsSync)(entryPoints)) return;
   await (0, import_esbuild2.build)({
-    entryPoints: ["./src/public/public.ts"],
-    outfile: options.outFolder + "/public.js",
+    entryPoints: [entryPoints],
+    outfile: options.outFolder + "/" + outName,
     bundle: true,
     minify: options.minimify,
     drop: ["debugger", "console"],
@@ -308,7 +318,11 @@ function init() {
   let watch2 = false;
   let minimify = false;
   let outFolder = "dist";
-  process.argv.forEach(function(val, index, array) {
+  let adminFolder = "src/admin/admin.ts";
+  let publicFolder = "src/public/public.ts";
+  const args = process.argv.slice(2);
+  while (args.length > 0) {
+    const val = args.shift();
     if (val === "--help") {
       console.log(`
       Usage: wipe-build [options]
@@ -316,19 +330,41 @@ function init() {
       Options:
         --watch     Watch for file changes
         --help      Show help
+        --minify    Minify the output
+        --out       Output folder
+        --admin     Admin input file
+        --public    Public input file
       `);
       process.exit(0);
     }
-    if (val === "--watch") watch2 = true;
-    if (val === "-w") watch2 = true;
-    if (val === "--minify") minimify = true;
-    if (val === "-m") minimify = true;
-    if (val === "--out") outFolder = array[index + 1];
-  });
+    switch (val) {
+      case "--watch":
+      case "-w":
+        watch2 = true;
+        break;
+      case "--minify":
+        minimify = true;
+        break;
+      case "-m":
+        minimify = true;
+        break;
+      case "--out":
+        outFolder = args.shift() || outFolder;
+        break;
+      case "--admin":
+        adminFolder = args.shift() || adminFolder;
+        break;
+      case "--public":
+        publicFolder = args.shift() || publicFolder;
+        break;
+    }
+  }
   const options = {
     watch: watch2,
     minimify,
-    outFolder
+    outFolder,
+    adminFolder,
+    publicFolder
   };
   if (watch2) watcher(options);
   build3(options);

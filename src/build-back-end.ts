@@ -1,5 +1,6 @@
 import { build } from "esbuild";
 import { glob } from "glob";
+import { existsSync } from "fs";
 import { wpWipeEsBuildImports } from "./wpwipe-esbuild-imports-plugin";
 import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
 import { timer, spacebetween } from "./utils";
@@ -11,7 +12,7 @@ export async function buildBackEnd(options: BuildOptions) {
   const blocks = [...glob.sync("./blocks/**/*.block.[jt]sx"), ...glob.sync("./blocks/**/*.block.[jt]s")];
   const time = timer();
 
-  let entryPoints = options.publicFolder;
+  let entryPoints = options.adminFolder;
   if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
   if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
   let outName = entryPoints.split("/").pop();
@@ -21,6 +22,8 @@ export async function buildBackEnd(options: BuildOptions) {
       ?.split(".")
       .splice(0, outName.split(".").length - 1)
       .join(".") + ".js";
+
+  if (!existsSync(entryPoints)) return;
 
   await build({
     stdin: {

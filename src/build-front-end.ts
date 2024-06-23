@@ -3,12 +3,13 @@ import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
 import { timer, spacebetween } from "./utils";
 import { switchKey } from "./switchKey";
 import type { BuildOptions } from "./types";
+import { existsSync } from "fs";
 
 export async function buildFrontEnd(options: BuildOptions) {
   const key = switchKey.key;
   const time = timer();
 
-  let entryPoints = options.adminFolder;
+  let entryPoints = options.publicFolder;
   if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
   if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
   let outName = entryPoints.split("/").pop();
@@ -18,6 +19,8 @@ export async function buildFrontEnd(options: BuildOptions) {
       ?.split(".")
       .splice(0, outName.split(".").length - 1)
       .join(".") + ".js";
+
+  if (!existsSync(entryPoints)) return;
 
   await build({
     entryPoints: [entryPoints],
