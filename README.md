@@ -1,5 +1,5 @@
-# WPWipe
-
+> # WPWipe
+> 
 > Next Generation Tooling for Wordpress Theme development
 
 - 📦 Gutenberg Blocks
@@ -72,4 +72,4 @@ We recomend using the following structure for usage in the admin as some tailwin
 }
 ```
 
-## The ecosystem
+# The ecosystem

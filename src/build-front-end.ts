@@ -7,9 +7,21 @@ import type { BuildOptions } from "./types";
 export async function buildFrontEnd(options: BuildOptions) {
   const key = switchKey.key;
   const time = timer();
+
+  let entryPoints = options.adminFolder;
+  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+  let outName = entryPoints.split("/").pop();
+
+  outName =
+    outName
+      ?.split(".")
+      .splice(0, outName.split(".").length - 1)
+      .join(".") + ".js";
+
   await build({
-    entryPoints: ["./src/public/public.ts"],
-    outfile: options.outFolder+"/public.js",
+    entryPoints: [entryPoints],
+    outfile: options.outFolder + "/" + outName,
     bundle: true,
     minify: options.minimify,
     drop: ["debugger", "console"],

@@ -10,16 +10,28 @@ export async function buildBackEnd(options: BuildOptions) {
   const key = switchKey.key;
   const blocks = [...glob.sync("./blocks/**/*.block.[jt]sx"), ...glob.sync("./blocks/**/*.block.[jt]s")];
   const time = timer();
+
+  let entryPoints = options.publicFolder;
+  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+  let outName = entryPoints.split("/").pop();
+
+  outName =
+    outName
+      ?.split(".")
+      .splice(0, outName.split(".").length - 1)
+      .join(".") + ".js";
+
   await build({
     stdin: {
       contents: `
-          import './src/admin/admin.ts';
+          import './${entryPoints}';
           ${blocks.map((block) => `import './${block}'`).join(";\n")}
           `,
       resolveDir: "./",
       loader: "ts",
     },
-    outfile: options.outFolder+"/admin.js",
+    outfile: options.outFolder + "/" + outName,
     minify: options.minimify,
     bundle: true,
     loader: {
@@ -28,10 +40,7 @@ export async function buildBackEnd(options: BuildOptions) {
     },
     jsxFactory: "window.wp.element.createElement",
     jsxFragment: "window.wp.element.Fragment",
-    plugins: [
-      wpWipeEsBuildImports(),
-      wpWipeEsBuildStyle(),
-    ],
+    plugins: [wpWipeEsBuildImports(), wpWipeEsBuildStyle()],
     format: "iife",
   })
     .then(() => {
