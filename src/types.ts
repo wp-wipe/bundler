@@ -4,4 +4,8 @@ export type BuildOptions = {
   outFolder: string;
   adminFolder: string;
   publicFolder: string;
+  esm: boolean,
+  cjs: boolean,
+  iife: boolean,
+  map: boolean,
 };

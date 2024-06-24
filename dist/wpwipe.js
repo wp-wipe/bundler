@@ -30,7 +30,9 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/build.ts
 var build_exports = {};
 __export(build_exports, {
-  build: () => build3
+  build: () => build3,
+  wpWipeEsBuildImports: () => wpWipeEsBuildImports,
+  wpWipeEsBuildStyle: () => wpWipeEsBuildStyle
 });
 module.exports = __toCommonJS(build_exports);
 
@@ -223,69 +225,138 @@ var switchKey = {
 
 // src/build-back-end.ts
 async function buildBackEnd(options) {
-  const key = switchKey.key;
-  const blocks = [...import_glob.glob.sync("./blocks/**/*.block.[jt]sx"), ...import_glob.glob.sync("./blocks/**/*.block.[jt]s")];
-  const time = timer();
-  let entryPoints = options.adminFolder;
-  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
-  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
-  let outName = entryPoints.split("/").pop();
-  outName = (outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".")) + ".js";
-  if (!(0, import_fs2.existsSync)(entryPoints)) return;
-  await (0, import_esbuild.build)({
-    stdin: {
-      contents: `
+  try {
+    const key = switchKey.key;
+    const blocks = [...import_glob.glob.sync("./blocks/**/*.block.[jt]sx"), ...import_glob.glob.sync("./blocks/**/*.block.[jt]s")];
+    const time = timer();
+    let entryPoints = options.adminFolder;
+    if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+    if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+    let outName = entryPoints.split("/").pop();
+    outName = outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".");
+    if (!(0, import_fs2.existsSync)(entryPoints)) return;
+    const config = {
+      outfile: `${options.outFolder}/${outName}.js`,
+      minify: options.minimify,
+      bundle: true,
+      loader: {
+        ".js": "jsx",
+        ".tsx": "tsx"
+      },
+      jsxFactory: "window.wp.element.createElement",
+      jsxFragment: "window.wp.element.Fragment",
+      plugins: [wpWipeEsBuildImports(), wpWipeEsBuildStyle()],
+      format: "iife",
+      sourcemap: options.map
+    };
+    if (blocks.length > 0) {
+      config.stdin = {
+        contents: `
           import './${entryPoints}';
           ${blocks.map((block) => `import './${block}'`).join(";\n")}
           `,
-      resolveDir: "./",
-      loader: "ts"
-    },
-    outfile: options.outFolder + "/" + outName,
-    minify: options.minimify,
-    bundle: true,
-    loader: {
-      ".js": "jsx",
-      ".tsx": "tsx"
-    },
-    jsxFactory: "window.wp.element.createElement",
-    jsxFragment: "window.wp.element.Fragment",
-    plugins: [wpWipeEsBuildImports(), wpWipeEsBuildStyle()],
-    format: "iife"
-  }).then(() => {
+        resolveDir: "./",
+        loader: "ts"
+      };
+    } else {
+      config.entryPoints = [entryPoints];
+    }
+    const builds = [];
+    if (options.esm)
+      builds.push(
+        (0, import_esbuild.build)({
+          ...config,
+          format: "esm",
+          outfile: `${options.outFolder}/${outName}.esm.js`
+        })
+      );
+    if (options.cjs)
+      builds.push(
+        (0, import_esbuild.build)({
+          ...config,
+          format: "cjs",
+          outfile: `${options.outFolder}/${outName}.cjs.js`
+        })
+      );
+    if (options.iife)
+      builds.push(
+        (0, import_esbuild.build)({
+          ...config,
+          format: "iife",
+          outfile: "dist/index.js"
+        })
+      );
+    await Promise.allSettled(builds);
     if (key === switchKey.key) {
       spacebetween(`Backend build successful`, ` ${time()} ms`, 40);
     }
-  }).catch(() => {
-  });
+  } catch (error) {
+    center(`Frontend build error`, 40);
+    console.error(error);
+  }
 }
 
 // src/build-front-end.ts
 var import_esbuild2 = require("esbuild");
 var import_fs3 = require("fs");
+var import_npm_dts = require("npm-dts");
 async function buildFrontEnd(options) {
-  const key = switchKey.key;
-  const time = timer();
-  let entryPoints = options.publicFolder;
-  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
-  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
-  let outName = entryPoints.split("/").pop();
-  outName = (outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".")) + ".js";
-  if (!(0, import_fs3.existsSync)(entryPoints)) return;
-  await (0, import_esbuild2.build)({
-    entryPoints: [entryPoints],
-    outfile: options.outFolder + "/" + outName,
-    bundle: true,
-    minify: options.minimify,
-    drop: ["debugger", "console"],
-    plugins: [wpWipeEsBuildStyle()],
-    format: "iife"
-  }).then(() => {
+  try {
+    const key = switchKey.key;
+    const time = timer();
+    let entryPoints = options.publicFolder;
+    if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+    if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+    let outName = entryPoints.split("/").pop();
+    outName = outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".");
+    if (!(0, import_fs3.existsSync)(entryPoints)) return;
+    new import_npm_dts.Generator({
+      entry: `${options.outFolder}/${outName}.js`,
+      output: `${options.outFolder}/${outName}.d.ts`
+    }).generate();
+    const config = {
+      entryPoints: [entryPoints],
+      outfile: `${options.outFolder}/${outName}.js`,
+      bundle: true,
+      minify: options.minimify,
+      drop: ["debugger", "console"],
+      plugins: [wpWipeEsBuildStyle()],
+      format: "iife",
+      sourcemap: options.map
+    };
+    const builds = [];
+    if (options.esm)
+      builds.push(
+        (0, import_esbuild2.build)({
+          ...config,
+          format: "esm",
+          outfile: `${options.outFolder}/${outName}.esm.js`
+        })
+      );
+    if (options.cjs)
+      builds.push(
+        (0, import_esbuild2.build)({
+          ...config,
+          format: "cjs",
+          outfile: `${options.outFolder}/${outName}.cjs.js`
+        })
+      );
+    if (options.iife)
+      builds.push(
+        (0, import_esbuild2.build)({
+          ...config,
+          format: "iife",
+          outfile: "dist/index.js"
+        })
+      );
+    await Promise.allSettled(builds);
     if (key === switchKey.key) {
       spacebetween(`Frontend build successful`, ` ${time()} ms`, 40);
     }
-  }).catch((e) => {
-  });
+  } catch (error) {
+    center(`Frontend build error`, 40);
+    console.error(error);
+  }
 }
 
 // src/build.ts
@@ -308,7 +379,7 @@ async function build3(options) {
   center(`WP WIPE BUILD`, 40);
   line(40);
   const time = timer();
-  await Promise.all([buildBackEnd(options), buildFrontEnd(options)]);
+  await Promise.allSettled([buildBackEnd(options), buildFrontEnd(options)]);
   if (key !== switchKey.key) return;
   line(40);
   spacebetween(`Build completed`, ` ${time()} ms`, 40);
@@ -320,6 +391,10 @@ function init() {
   let outFolder = "dist";
   let adminFolder = "src/admin/admin.ts";
   let publicFolder = "src/public/public.ts";
+  let esm = false;
+  let cjs = false;
+  let iife = false;
+  let map = false;
   const args = process.argv.slice(2);
   while (args.length > 0) {
     const val = args.shift();
@@ -334,6 +409,10 @@ function init() {
         --out       Output folder
         --admin     Admin input file
         --public    Public input file
+        --esm       Output ESM
+        --cjs       Output CJS
+        --iife      Output IIFE
+        
       `);
       process.exit(0);
     }
@@ -357,14 +436,33 @@ function init() {
       case "--public":
         publicFolder = args.shift() || publicFolder;
         break;
+      case "--esm":
+        esm = true;
+        break;
+      case "--cjs":
+        cjs = true;
+        break;
+      case "--iife":
+        iife = true;
+        break;
+      case "--map":
+        map = true;
+        break;
     }
+  }
+  if (!cjs && !esm && !iife) {
+    iife = true;
   }
   const options = {
     watch: watch2,
     minimify,
     outFolder,
     adminFolder,
-    publicFolder
+    publicFolder,
+    esm,
+    cjs,
+    iife,
+    map
   };
   if (watch2) watcher(options);
   build3(options);
@@ -372,5 +470,7 @@ function init() {
 init();
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  build
+  build,
+  wpWipeEsBuildImports,
+  wpWipeEsBuildStyle
 });

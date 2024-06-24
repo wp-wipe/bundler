@@ -1,40 +1,74 @@
 import { build } from "esbuild";
 import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
-import { timer, spacebetween } from "./utils";
+import { timer, spacebetween, center } from "./utils";
 import { switchKey } from "./switchKey";
 import type { BuildOptions } from "./types";
 import { existsSync } from "fs";
+import { Generator } from "npm-dts";
+import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions } from "esbuild";
 
 export async function buildFrontEnd(options: BuildOptions) {
-  const key = switchKey.key;
-  const time = timer();
+  try {
+    const key = switchKey.key;
+    const time = timer();
 
-  let entryPoints = options.publicFolder;
-  if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
-  if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
-  let outName = entryPoints.split("/").pop();
+    let entryPoints = options.publicFolder;
+    if (entryPoints.substring(0, 1) !== "/" && entryPoints.substring(0, 1) !== ".") entryPoints = "/" + entryPoints;
+    if (entryPoints.substring(0, 1) !== ".") entryPoints = "./" + entryPoints;
+    let outName = entryPoints.split("/").pop();
 
-  outName =
-    outName
+    outName = outName
       ?.split(".")
       .splice(0, outName.split(".").length - 1)
-      .join(".") + ".js";
+      .join(".");
 
-  if (!existsSync(entryPoints)) return;
+    if (!existsSync(entryPoints)) return;
 
-  await build({
-    entryPoints: [entryPoints],
-    outfile: options.outFolder + "/" + outName,
-    bundle: true,
-    minify: options.minimify,
-    drop: ["debugger", "console"],
-    plugins: [wpWipeEsBuildStyle()],
-    format: "iife",
-  })
-    .then(() => {
-      if (key === switchKey.key) {
-        spacebetween(`Frontend build successful`, ` ${time()} ms`, 40);
-      }
-    })
-    .catch((e) => {});
+    const config: EsBuildOptions = {
+      entryPoints: [entryPoints],
+      outfile: `${options.outFolder}/${outName}.js`,
+      bundle: true,
+      minify: options.minimify,
+      drop: ["debugger", "console"],
+      plugins: [wpWipeEsBuildStyle()],
+      format: "iife",
+      sourcemap: options.map,
+    };
+    const builds = [] as Promise<BuildResult | BuildFailure>[];
+    if (options.esm)
+      builds.push(
+        build({
+          ...config,
+          format: "esm",
+          outfile: `${options.outFolder}/${outName}.esm.js`,
+        })
+      );
+
+    if (options.cjs)
+      builds.push(
+        build({
+          ...config,
+          format: "cjs",
+          outfile: `${options.outFolder}/${outName}.cjs.js`,
+        })
+      );
+
+    if (options.iife)
+      builds.push(
+        build({
+          ...config,
+          format: "iife",
+          outfile: "dist/index.js",
+        })
+      );
+
+    await Promise.allSettled(builds);
+
+    if (key === switchKey.key) {
+      spacebetween(`Frontend build successful`, ` ${time()} ms`, 40);
+    }
+  } catch (error) {
+    center(`Frontend build error`, 40);
+    console.error(error);
+  }
 }

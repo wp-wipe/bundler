@@ -1,15 +1,15 @@
 {
   "name": "@wp-wipe/bundler",
-  "version": "0.2.4",
+  "version": "0.3.4",
   "description": "README.md",
-  "license": "ISC",
+  "license": "MIT",
   "main": "dist/wpwipe.js",
   "bin": {
     "wpwipe": "dist/wpwipe.js"
   },
   "scripts": {
     "build": "node ./builder",
-    "publish": "npm run build && npm publish"
+    "publish": "npm run build && npm publish --access public"
   },
   "keywords": [
     "wordpress",
@@ -24,8 +24,7 @@
     "esbuild": "^0.21.5",
     "postcss": "^8.4.38",
     "sass": "^1.77.6",
-    "tailwindcss": "^3.4.4",
-    "vite": "^5.3.1"
+    "tailwindcss": "^3.4.4"
   },
   "devDependencies": {
     "@types/node": "^20.14.8"
