@@ -6,8 +6,9 @@ import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
 import { timer, spacebetween, center } from "./utils";
 import { switchKey } from "./switchKey";
 import type { BuildOptions } from "./types";
+import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions, Plugin } from "esbuild";
 import { Generator } from "npm-dts";
-import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions } from "esbuild";
+import vuePlugin from "esbuild-plugin-vue3";
 
 export async function buildBackEnd(options: BuildOptions) {
   try {
@@ -27,6 +28,7 @@ export async function buildBackEnd(options: BuildOptions) {
 
     if (!existsSync(entryPoints)) return;
 
+    const plugins = [wpWipeEsBuildImports(), wpWipeEsBuildStyle(), vuePlugin()] as Plugin[];
     const config: EsBuildOptions = {
       outfile: `${options.outFolder}/${outName}.js`,
       minify: options.minimify,
@@ -37,7 +39,7 @@ export async function buildBackEnd(options: BuildOptions) {
       },
       jsxFactory: "window.wp.element.createElement",
       jsxFragment: "window.wp.element.Fragment",
-      plugins: [wpWipeEsBuildImports(), wpWipeEsBuildStyle()],
+      plugins,
       format: "iife",
       sourcemap: options.map,
     };
@@ -47,6 +49,7 @@ export async function buildBackEnd(options: BuildOptions) {
         contents: `
           import './${entryPoints}';
           ${blocks.map((block) => `import './${block}'`).join(";\n")}
+import { Generator } from 'npm-dts';
           `,
         resolveDir: "./",
         loader: "ts",
@@ -82,6 +85,7 @@ export async function buildBackEnd(options: BuildOptions) {
           outfile: "dist/index.js",
         })
       );
+
 
     await Promise.allSettled(builds);
 

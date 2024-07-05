@@ -4,9 +4,9 @@ import { timer, spacebetween, center } from "./utils";
 import { switchKey } from "./switchKey";
 import type { BuildOptions } from "./types";
 import { existsSync } from "fs";
-import { Generator } from "npm-dts";
-import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions } from "esbuild";
+import vuePlugin from "esbuild-plugin-vue3";
 
+import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions, Plugin } from "esbuild";
 export async function buildFrontEnd(options: BuildOptions) {
   try {
     const key = switchKey.key;
@@ -24,13 +24,15 @@ export async function buildFrontEnd(options: BuildOptions) {
 
     if (!existsSync(entryPoints)) return;
 
+    const plugins = [wpWipeEsBuildStyle(), vuePlugin()] as Plugin[];
+
     const config: EsBuildOptions = {
       entryPoints: [entryPoints],
       outfile: `${options.outFolder}/${outName}.js`,
       bundle: true,
       minify: options.minimify,
       drop: ["debugger", "console"],
-      plugins: [wpWipeEsBuildStyle()],
+      plugins,
       format: "iife",
       sourcemap: options.map,
     };

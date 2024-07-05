@@ -8,4 +8,5 @@ export type BuildOptions = {
   cjs: boolean,
   iife: boolean,
   map: boolean,
+  dts: boolean,
 };

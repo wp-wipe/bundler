@@ -224,6 +224,7 @@ var switchKey = {
 };
 
 // src/build-back-end.ts
+var import_esbuild_plugin_vue3 = __toESM(require("esbuild-plugin-vue3"));
 async function buildBackEnd(options) {
   try {
     const key = switchKey.key;
@@ -235,6 +236,7 @@ async function buildBackEnd(options) {
     let outName = entryPoints.split("/").pop();
     outName = outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".");
     if (!(0, import_fs2.existsSync)(entryPoints)) return;
+    const plugins = [wpWipeEsBuildImports(), wpWipeEsBuildStyle(), (0, import_esbuild_plugin_vue3.default)()];
     const config = {
       outfile: `${options.outFolder}/${outName}.js`,
       minify: options.minimify,
@@ -245,7 +247,7 @@ async function buildBackEnd(options) {
       },
       jsxFactory: "window.wp.element.createElement",
       jsxFragment: "window.wp.element.Fragment",
-      plugins: [wpWipeEsBuildImports(), wpWipeEsBuildStyle()],
+      plugins,
       format: "iife",
       sourcemap: options.map
     };
@@ -254,6 +256,7 @@ async function buildBackEnd(options) {
         contents: `
           import './${entryPoints}';
           ${blocks.map((block) => `import './${block}'`).join(";\n")}
+import { Generator } from 'npm-dts';
           `,
         resolveDir: "./",
         loader: "ts"
@@ -299,7 +302,7 @@ async function buildBackEnd(options) {
 // src/build-front-end.ts
 var import_esbuild2 = require("esbuild");
 var import_fs3 = require("fs");
-var import_npm_dts = require("npm-dts");
+var import_esbuild_plugin_vue32 = __toESM(require("esbuild-plugin-vue3"));
 async function buildFrontEnd(options) {
   try {
     const key = switchKey.key;
@@ -310,17 +313,14 @@ async function buildFrontEnd(options) {
     let outName = entryPoints.split("/").pop();
     outName = outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".");
     if (!(0, import_fs3.existsSync)(entryPoints)) return;
-    new import_npm_dts.Generator({
-      entry: `${options.outFolder}/${outName}.js`,
-      output: `${options.outFolder}/${outName}.d.ts`
-    }).generate();
+    const plugins = [wpWipeEsBuildStyle(), (0, import_esbuild_plugin_vue32.default)()];
     const config = {
       entryPoints: [entryPoints],
       outfile: `${options.outFolder}/${outName}.js`,
       bundle: true,
       minify: options.minimify,
       drop: ["debugger", "console"],
-      plugins: [wpWipeEsBuildStyle()],
+      plugins,
       format: "iife",
       sourcemap: options.map
     };
@@ -361,10 +361,11 @@ async function buildFrontEnd(options) {
 
 // src/build.ts
 var import_chokidar = require("chokidar");
+var esbuild = __toESM(require("esbuild"));
 function watcher(options) {
   (0, import_chokidar.watch)("./**/*", {
     ignored: options.outFolder,
-    usePolling: true
+    usePolling: false
   }).on("all", (event) => {
     if (event === "change") {
       build3(options);
@@ -384,17 +385,21 @@ async function build3(options) {
   line(40);
   spacebetween(`Build completed`, ` ${time()} ms`, 40);
   line(40);
+  esbuild.stop();
 }
 function init() {
-  let watch2 = false;
-  let minimify = false;
-  let outFolder = "dist";
-  let adminFolder = "src/admin/admin.ts";
-  let publicFolder = "src/public/public.ts";
-  let esm = false;
-  let cjs = false;
-  let iife = false;
-  let map = false;
+  const options = {
+    watch: false,
+    minimify: false,
+    outFolder: "dist",
+    adminFolder: "src/admin/admin.ts",
+    publicFolder: "src/public/public.ts",
+    esm: false,
+    cjs: false,
+    iife: false,
+    map: false,
+    dts: false
+  };
   const args = process.argv.slice(2);
   while (args.length > 0) {
     const val = args.shift();
@@ -419,52 +424,41 @@ function init() {
     switch (val) {
       case "--watch":
       case "-w":
-        watch2 = true;
+        options.watch = true;
         break;
       case "--minify":
-        minimify = true;
+        options.minimify = true;
         break;
       case "-m":
-        minimify = true;
+        options.minimify = true;
         break;
       case "--out":
-        outFolder = args.shift() || outFolder;
+        options.outFolder = args.shift() || options.outFolder;
         break;
       case "--admin":
-        adminFolder = args.shift() || adminFolder;
+        options.adminFolder = args.shift() || options.adminFolder;
         break;
       case "--public":
-        publicFolder = args.shift() || publicFolder;
+        options.publicFolder = args.shift() || options.publicFolder;
         break;
       case "--esm":
-        esm = true;
+        options.esm = true;
         break;
       case "--cjs":
-        cjs = true;
+        options.cjs = true;
         break;
       case "--iife":
-        iife = true;
+        options.iife = true;
         break;
       case "--map":
-        map = true;
+        options.map = true;
         break;
     }
   }
-  if (!cjs && !esm && !iife) {
-    iife = true;
+  if (!options.cjs && !options.esm && !options.iife) {
+    options.iife = true;
   }
-  const options = {
-    watch: watch2,
-    minimify,
-    outFolder,
-    adminFolder,
-    publicFolder,
-    esm,
-    cjs,
-    iife,
-    map
-  };
-  if (watch2) watcher(options);
+  if (options.watch) watcher(options);
   build3(options);
 }
 init();

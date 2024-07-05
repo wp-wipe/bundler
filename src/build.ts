@@ -7,16 +7,19 @@ import { switchKey } from "./switchKey";
 import { BuildOptions } from "./types";
 import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
 import { wpWipeEsBuildImports } from "./wpwipe-esbuild-imports-plugin";
+import * as esbuild from 'esbuild'
 
 export { wpWipeEsBuildStyle, wpWipeEsBuildImports };
 
 function watcher(options: BuildOptions) {
   watch("./**/*", {
     ignored: options.outFolder,
-    usePolling: true,
+    usePolling: false,
   }).on("all", (event) => {
     if (event === "change") {
       build(options);
+      
+      
     }
   });
 }
@@ -38,18 +41,22 @@ export async function build(options: BuildOptions) {
   line(40);
   spacebetween(`Build completed`, ` ${time()} ms`, 40);
   line(40);
+  esbuild.stop()
 }
 
 function init() {
-  let watch = false;
-  let minimify = false;
-  let outFolder = "dist";
-  let adminFolder = "src/admin/admin.ts";
-  let publicFolder = "src/public/public.ts";
-  let esm = false;
-  let cjs = false;
-  let iife = false;
-  let map = false;
+  const options: BuildOptions = {
+    watch: false,
+    minimify: false,
+    outFolder: "dist",
+    adminFolder: "src/admin/admin.ts",
+    publicFolder: "src/public/public.ts",
+    esm: false,
+    cjs: false,
+    iife: false,
+    map: false,
+    dts: false,
+  };
 
   const args = process.argv.slice(2);
   while (args.length > 0) {
@@ -76,54 +83,42 @@ function init() {
     switch (val) {
       case "--watch":
       case "-w":
-        watch = true;
+        options.watch = true;
         break;
       case "--minify":
-        minimify = true;
+        options.minimify = true;
         break;
       case "-m":
-        minimify = true;
+        options.minimify = true;
         break;
       case "--out":
-        outFolder = args.shift() || outFolder;
+        options.outFolder = args.shift() || options.outFolder;
         break;
       case "--admin":
-        adminFolder = args.shift() || adminFolder;
+        options.adminFolder = args.shift() || options.adminFolder;
         break;
       case "--public":
-        publicFolder = args.shift() || publicFolder;
+        options.publicFolder = args.shift() || options.publicFolder;
         break;
       case "--esm":
-        esm = true;
+        options.esm = true;
         break;
       case "--cjs":
-        cjs = true;
+        options.cjs = true;
         break;
       case "--iife":
-        iife = true;
+        options.iife = true;
         break;
       case "--map":
-        map = true;
+        options.map = true;
         break;
     }
   }
-  if (!cjs && !esm && !iife) {
-    iife = true;
+  if (!options.cjs && !options.esm && !options.iife) {
+    options.iife = true;
   }
 
-  const options: BuildOptions = {
-    watch,
-    minimify,
-    outFolder,
-    adminFolder,
-    publicFolder,
-    esm,
-    cjs,
-    iife,
-    map,
-  };
-
-  if (watch) watcher(options);
+  if (options.watch) watcher(options);
   build(options);
 }
 
