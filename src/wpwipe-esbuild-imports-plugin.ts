@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { windowedModules } from "./wordpress-modules";
 import { createHash } from "crypto";
 
-function transformJsImports(input) {
+function transformJsImports(input: string): string {
   // Regular expression to match import statements
   const importRegex = /import\s*(\{?[^}^;]+\}?)\s*\s*from\s*["'](@wordpress\/[^"']+)["']?/g;
 
@@ -28,8 +28,8 @@ function transformJsImports(input) {
       .join(", ");
 
     // Putback curly braces if needed
-    if (treeShakenImports.match("{.*}")) return `const { ${formattedImports} } = ${windowedModules[sourceModule]};`;
-    return `const ${formattedImports} = ${windowedModules[sourceModule]};`;
+    if (treeShakenImports.match("{.*}")) return `const { ${formattedImports} } = ${windowedModules[sourceModule].replace(".", "?.")} || {};`;
+    return `const ${formattedImports} = ${windowedModules[sourceModule].replace(".", "?.")} || {};`;
   });
 
   return output;
@@ -46,8 +46,8 @@ export function wpWipeEsBuildImports(): Plugin {
         const contents = await fs.readFile(args.path, "utf8");
 
         const hash = createHash("sha256").update(contents).digest("hex");
-        
-        if (buildCache.has(hash)) { 
+
+        if (buildCache.has(hash)) {
           return {
             contents: buildCache.get(hash),
             loader: "tsx",

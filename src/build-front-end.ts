@@ -5,6 +5,7 @@ import { switchKey } from "./switchKey";
 import type { BuildOptions } from "./types";
 import { existsSync } from "fs";
 import vuePlugin from "esbuild-plugin-vue3";
+import { sassPlugin } from "esbuild-sass-plugin";
 
 import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions, Plugin } from "esbuild";
 export async function buildFrontEnd(options: BuildOptions) {
@@ -24,7 +25,7 @@ export async function buildFrontEnd(options: BuildOptions) {
 
     if (!existsSync(entryPoints)) return;
 
-    const plugins = [wpWipeEsBuildStyle(), vuePlugin()] as Plugin[];
+    const plugins = [wpWipeEsBuildStyle(), vuePlugin(), sassPlugin()] as Plugin[];
 
     const config: EsBuildOptions = {
       entryPoints: [entryPoints],
@@ -60,7 +61,7 @@ export async function buildFrontEnd(options: BuildOptions) {
         build({
           ...config,
           format: "iife",
-          outfile: "dist/index.js",
+          outfile: `${options.outFolder}/${outName}.js`,
         })
       );
 

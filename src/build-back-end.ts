@@ -7,8 +7,8 @@ import { timer, spacebetween, center } from "./utils";
 import { switchKey } from "./switchKey";
 import type { BuildOptions } from "./types";
 import type { BuildFailure, BuildResult, BuildOptions as EsBuildOptions, Plugin } from "esbuild";
-import { Generator } from "npm-dts";
 import vuePlugin from "esbuild-plugin-vue3";
+import {sassPlugin} from 'esbuild-sass-plugin'
 
 export async function buildBackEnd(options: BuildOptions) {
   try {
@@ -28,7 +28,7 @@ export async function buildBackEnd(options: BuildOptions) {
 
     if (!existsSync(entryPoints)) return;
 
-    const plugins = [wpWipeEsBuildImports(), wpWipeEsBuildStyle(), vuePlugin()] as Plugin[];
+    const plugins = [wpWipeEsBuildImports(), wpWipeEsBuildStyle(), vuePlugin(), sassPlugin()] as Plugin[];
     const config: EsBuildOptions = {
       outfile: `${options.outFolder}/${outName}.js`,
       minify: options.minimify,
@@ -82,16 +82,16 @@ import { Generator } from 'npm-dts';
         build({
           ...config,
           format: "iife",
-          outfile: "dist/index.js",
+          outfile: `${options.outFolder}/${outName}.js`,
         })
       );
-
 
     await Promise.allSettled(builds);
 
     if (key === switchKey.key) {
       spacebetween(`Backend build successful`, ` ${time()} ms`, 40);
     }
+    return;
   } catch (error) {
     center(`Frontend build error`, 40);
     console.error(error);

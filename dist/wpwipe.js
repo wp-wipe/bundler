@@ -90,8 +90,8 @@ function transformJsImports(input) {
       }
       return importName.replace(" as ", ": ");
     }).filter(Boolean).join(", ");
-    if (treeShakenImports.match("{.*}")) return `const { ${formattedImports} } = ${windowedModules[sourceModule]};`;
-    return `const ${formattedImports} = ${windowedModules[sourceModule]};`;
+    if (treeShakenImports.match("{.*}")) return `const { ${formattedImports} } = ${windowedModules[sourceModule].replace(".", "?.")} || {};`;
+    return `const ${formattedImports} = ${windowedModules[sourceModule].replace(".", "?.")} || {};`;
   });
   return output;
 }
@@ -164,6 +164,13 @@ function wpWipeEsBuildStyle(options) {
   return {
     name: "WpWipeEsBuildStyle",
     setup(build4) {
+      build4.onResolve({ filter: /^@assets\// }, (args) => {
+        const newPath = args.path.replace(/^@assets\//, "../assets/");
+        return { path: newPath, external: true };
+      });
+      build4.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp)$/ }, (args) => {
+        return { path: args.path, external: true };
+      });
       build4.onLoad({ filter: /.*\.s?css$/ }, async (args) => {
         if (args.path.includes("node_modules")) return;
         const contents = await import_promises2.default.readFile(args.path, "utf8");
@@ -225,6 +232,7 @@ var switchKey = {
 
 // src/build-back-end.ts
 var import_esbuild_plugin_vue3 = __toESM(require("esbuild-plugin-vue3"));
+var import_esbuild_sass_plugin = require("esbuild-sass-plugin");
 async function buildBackEnd(options) {
   try {
     const key = switchKey.key;
@@ -236,7 +244,7 @@ async function buildBackEnd(options) {
     let outName = entryPoints.split("/").pop();
     outName = outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".");
     if (!(0, import_fs2.existsSync)(entryPoints)) return;
-    const plugins = [wpWipeEsBuildImports(), wpWipeEsBuildStyle(), (0, import_esbuild_plugin_vue3.default)()];
+    const plugins = [wpWipeEsBuildImports(), wpWipeEsBuildStyle(), (0, import_esbuild_plugin_vue3.default)(), (0, import_esbuild_sass_plugin.sassPlugin)()];
     const config = {
       outfile: `${options.outFolder}/${outName}.js`,
       minify: options.minimify,
@@ -286,13 +294,14 @@ import { Generator } from 'npm-dts';
         (0, import_esbuild.build)({
           ...config,
           format: "iife",
-          outfile: "dist/index.js"
+          outfile: `${options.outFolder}/${outName}.js`
         })
       );
     await Promise.allSettled(builds);
     if (key === switchKey.key) {
       spacebetween(`Backend build successful`, ` ${time()} ms`, 40);
     }
+    return;
   } catch (error) {
     center(`Frontend build error`, 40);
     console.error(error);
@@ -303,6 +312,7 @@ import { Generator } from 'npm-dts';
 var import_esbuild2 = require("esbuild");
 var import_fs3 = require("fs");
 var import_esbuild_plugin_vue32 = __toESM(require("esbuild-plugin-vue3"));
+var import_esbuild_sass_plugin2 = require("esbuild-sass-plugin");
 async function buildFrontEnd(options) {
   try {
     const key = switchKey.key;
@@ -313,7 +323,7 @@ async function buildFrontEnd(options) {
     let outName = entryPoints.split("/").pop();
     outName = outName == null ? void 0 : outName.split(".").splice(0, outName.split(".").length - 1).join(".");
     if (!(0, import_fs3.existsSync)(entryPoints)) return;
-    const plugins = [wpWipeEsBuildStyle(), (0, import_esbuild_plugin_vue32.default)()];
+    const plugins = [wpWipeEsBuildStyle(), (0, import_esbuild_plugin_vue32.default)(), (0, import_esbuild_sass_plugin2.sassPlugin)()];
     const config = {
       entryPoints: [entryPoints],
       outfile: `${options.outFolder}/${outName}.js`,
@@ -346,7 +356,7 @@ async function buildFrontEnd(options) {
         (0, import_esbuild2.build)({
           ...config,
           format: "iife",
-          outfile: "dist/index.js"
+          outfile: `${options.outFolder}/${outName}.js`
         })
       );
     await Promise.allSettled(builds);
@@ -361,11 +371,9 @@ async function buildFrontEnd(options) {
 
 // src/build.ts
 var import_chokidar = require("chokidar");
-var esbuild = __toESM(require("esbuild"));
 function watcher(options) {
   (0, import_chokidar.watch)("./**/*", {
-    ignored: options.outFolder,
-    usePolling: false
+    ignored: options.outFolder
   }).on("all", (event) => {
     if (event === "change") {
       build3(options);
@@ -385,7 +393,6 @@ async function build3(options) {
   line(40);
   spacebetween(`Build completed`, ` ${time()} ms`, 40);
   line(40);
-  esbuild.stop();
 }
 function init() {
   const options = {

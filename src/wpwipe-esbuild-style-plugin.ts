@@ -48,6 +48,13 @@ export function wpWipeEsBuildStyle(options?: { tailwindPrefix: string }): Plugin
   return {
     name: "WpWipeEsBuildStyle",
     setup(build) {
+      build.onResolve({ filter: /^@assets\// }, (args) => {
+        const newPath = args.path.replace(/^@assets\//, "../assets/");
+        return { path: newPath, external: true };
+      });
+      build.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp)$/ }, (args) => {
+        return { path: args.path, external: true };
+      });
       build.onLoad({ filter: /.*\.s?css$/ }, async (args) => {
         if (args.path.includes("node_modules")) return;
 

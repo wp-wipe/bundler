@@ -7,19 +7,15 @@ import { switchKey } from "./switchKey";
 import { BuildOptions } from "./types";
 import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
 import { wpWipeEsBuildImports } from "./wpwipe-esbuild-imports-plugin";
-import * as esbuild from 'esbuild'
 
 export { wpWipeEsBuildStyle, wpWipeEsBuildImports };
 
 function watcher(options: BuildOptions) {
   watch("./**/*", {
     ignored: options.outFolder,
-    usePolling: false,
   }).on("all", (event) => {
     if (event === "change") {
       build(options);
-      
-      
     }
   });
 }
@@ -41,7 +37,6 @@ export async function build(options: BuildOptions) {
   line(40);
   spacebetween(`Build completed`, ` ${time()} ms`, 40);
   line(40);
-  esbuild.stop()
 }
 
 function init() {
