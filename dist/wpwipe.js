@@ -299,11 +299,11 @@ import { Generator } from 'npm-dts';
       );
     await Promise.allSettled(builds);
     if (key === switchKey.key) {
-      spacebetween(`Backend build successful`, ` ${time()} ms`, 40);
+      spacebetween(`Backend build successful`, ` ${time()} ms`, 36);
     }
     return;
   } catch (error) {
-    center(`Frontend build error`, 40);
+    center(`Frontend build error`, 36);
     console.error(error);
   }
 }
@@ -361,16 +361,118 @@ async function buildFrontEnd(options) {
       );
     await Promise.allSettled(builds);
     if (key === switchKey.key) {
-      spacebetween(`Frontend build successful`, ` ${time()} ms`, 40);
+      spacebetween(`Frontend build successful`, ` ${time()} ms`, 36);
     }
   } catch (error) {
-    center(`Frontend build error`, 40);
+    center(`Frontend build error`, 38);
     console.error(error);
   }
 }
 
 // src/build.ts
 var import_chokidar = require("chokidar");
+
+// src/ascii.ts
+var import_picocolors = __toESM(require("picocolors"));
+function stripColors(str) {
+  return str.replace(/\x1b\[[0-9;]*m/g, "");
+}
+function pcBg(color) {
+  switch (color) {
+    case "black":
+      return import_picocolors.default.bgBlack;
+    case "red":
+      return import_picocolors.default.bgRed;
+    case "green":
+      return import_picocolors.default.bgGreen;
+    case "yellow":
+      return import_picocolors.default.bgYellow;
+    case "blue":
+      return import_picocolors.default.bgBlue;
+    case "magenta":
+      return import_picocolors.default.bgMagenta;
+    case "cyan":
+      return import_picocolors.default.bgCyan;
+    case "white":
+      return import_picocolors.default.bgWhite;
+    default:
+      return import_picocolors.default.bgBlack;
+  }
+}
+function pcFg(color) {
+  switch (color) {
+    case "black":
+      return import_picocolors.default.black;
+    case "red":
+      return import_picocolors.default.red;
+    case "green":
+      return import_picocolors.default.green;
+    case "yellow":
+      return import_picocolors.default.yellow;
+    case "blue":
+      return import_picocolors.default.blue;
+    case "magenta":
+      return import_picocolors.default.magenta;
+    case "cyan":
+      return import_picocolors.default.cyan;
+    case "white":
+      return import_picocolors.default.white;
+    default:
+      return import_picocolors.default.black;
+  }
+}
+function gradient(from, to) {
+  const bg = pcBg(to);
+  const fg = pcFg(from);
+  return `${bg(fg("\u2588\u2593\u2592\u2591"))}`;
+}
+function doublebox(string) {
+  const lines = string.split("\n");
+  const maxLength = Math.max(
+    ...lines.map((line2) => {
+      return stripColors(line2).length;
+    })
+  );
+  const top = `\u2554${"\u2550".repeat(maxLength + 2)}\u2557`;
+  const bottom = `\u255A${"\u2550".repeat(maxLength + 2)}\u255D`;
+  const middle = lines.map((line2) => `\u2551 ${line2} \u2551`);
+  return [top, ...middle, bottom].join("\n");
+}
+function wpwipelogo() {
+  const gradientStart = gradient("green", "cyan") + gradient("cyan", "red") + gradient("red", "yellow");
+  const gradientEnd = gradient("yellow", "red") + gradient("red", "cyan") + gradient("cyan", "green");
+  const lines = [gradientStart + import_picocolors.default.bgYellow(import_picocolors.default.black("        ")) + gradientEnd, gradientStart + import_picocolors.default.bgYellow(import_picocolors.default.black(" WPWipe ")) + gradientEnd, gradientStart + import_picocolors.default.bgYellow(import_picocolors.default.black("        ")) + gradientEnd].join("\n");
+  return doublebox(lines);
+}
+
+// src/add-includes.ts
+var import_glob2 = require("glob");
+var import_fs4 = require("fs");
+async function addIncludes(options) {
+  const includes = import_glob2.glob.sync("./**/*.inc.php");
+  const key = switchKey.key;
+  const time = timer();
+  const relative = options.outFolder ? options.outFolder.split(/[\\|\/]/).map((a) => "..").join("/") + "/" : "";
+  const content = includes.map((file2) => `include(__DIR__.'/${relative}${file2}');`).join("\n");
+  const file = `${options.outFolder}/includes.php`;
+  if (!(0, import_fs4.existsSync)(options.outFolder)) return;
+  require("fs").writeFileSync(
+    file,
+    `<?php 
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+${content}
+`
+  );
+  if (key === switchKey.key) {
+    spacebetween(`Includes generated`, ` ${time()} ms`, 36);
+  }
+  return;
+}
+
+// src/build.ts
 function watcher(options) {
   (0, import_chokidar.watch)("./**/*", {
     ignored: options.outFolder
@@ -384,15 +486,13 @@ async function build3(options) {
   switchKey.generate();
   const key = switchKey.key;
   console.clear();
-  line(40);
-  center(`WP WIPE BUILD`, 40);
-  line(40);
+  console.log(wpwipelogo());
   const time = timer();
-  await Promise.allSettled([buildBackEnd(options), buildFrontEnd(options)]);
+  await Promise.allSettled([buildBackEnd(options), buildFrontEnd(options), addIncludes(options)]);
   if (key !== switchKey.key) return;
-  line(40);
-  spacebetween(`Build completed`, ` ${time()} ms`, 40);
-  line(40);
+  line(36);
+  spacebetween(`Build completed`, ` ${time()} ms`, 36);
+  line(36);
 }
 function init() {
   const options = {
