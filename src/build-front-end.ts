@@ -68,10 +68,10 @@ export async function buildFrontEnd(options: BuildOptions) {
     await Promise.allSettled(builds);
 
     if (key === switchKey.key) {
-      spacebetween(`Frontend build successful`, ` ${time()} ms`, 40);
+      spacebetween(`Frontend build successful`, ` ${time()} ms`, 36);
     }
   } catch (error) {
-    center(`Frontend build error`, 40);
+    center(`Frontend build error`, 38);
     console.error(error);
   }
 }

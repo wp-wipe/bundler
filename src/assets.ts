@@ -4,4 +4,4 @@ export const styleAssetsPlugin = {
   setup(build) {
     
   },
-};
+}; 

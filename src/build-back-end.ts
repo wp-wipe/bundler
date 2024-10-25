@@ -89,11 +89,11 @@ import { Generator } from 'npm-dts';
     await Promise.allSettled(builds);
 
     if (key === switchKey.key) {
-      spacebetween(`Backend build successful`, ` ${time()} ms`, 40);
+      spacebetween(`Backend build successful`, ` ${time()} ms`, 36);
     }
     return;
   } catch (error) {
-    center(`Frontend build error`, 40);
+    center(`Frontend build error`, 36);
     console.error(error);
   }
 }

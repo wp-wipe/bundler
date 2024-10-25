@@ -7,6 +7,8 @@ import { switchKey } from "./switchKey";
 import { BuildOptions } from "./types";
 import { wpWipeEsBuildStyle } from "./wpwipe-esbuild-style-plugin";
 import { wpWipeEsBuildImports } from "./wpwipe-esbuild-imports-plugin";
+import { wpwipelogo } from "./ascii";
+import { addIncludes } from "./add-includes";
 
 export { wpWipeEsBuildStyle, wpWipeEsBuildImports };
 
@@ -26,17 +28,15 @@ export async function build(options: BuildOptions) {
 
   console.clear();
 
-  line(40);
-  center(`WP WIPE BUILD`, 40);
-  line(40);
+  console.log(wpwipelogo());
   const time = timer();
   //
 
-  await Promise.allSettled([buildBackEnd(options), buildFrontEnd(options)]); //,
+  await Promise.allSettled([buildBackEnd(options), buildFrontEnd(options), addIncludes(options)]); //,
   if (key !== switchKey.key) return;
-  line(40);
-  spacebetween(`Build completed`, ` ${time()} ms`, 40);
-  line(40);
+  line(36);
+  spacebetween(`Build completed`, ` ${time()} ms`, 36);
+  line(36);
 }
 
 function init() {

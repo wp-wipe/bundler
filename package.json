@@ -1,6 +1,6 @@
 {
   "name": "@wp-wipe/bundler",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "README.md",
   "license": "MIT",
   "main": "dist/wpwipe.js",
