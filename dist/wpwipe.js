@@ -329,7 +329,7 @@ async function buildFrontEnd(options) {
       outfile: `${options.outFolder}/${outName}.js`,
       bundle: true,
       minify: options.minimify,
-      drop: ["debugger", "console"],
+      drop: ["debugger"],
       plugins,
       format: "iife",
       sourcemap: options.map
