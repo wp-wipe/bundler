@@ -52,7 +52,7 @@ export function wpWipeEsBuildStyle(options?: { tailwindPrefix: string }): Plugin
         const newPath = args.path.replace(/^@assets\//, "../assets/");
         return { path: newPath, external: true };
       });
-      build.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp)$/ }, (args) => {
+      build.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp|ttf|otf)$/ }, (args) => {
         return { path: args.path, external: true };
       });
       build.onLoad({ filter: /.*\.s?css$/ }, async (args) => {

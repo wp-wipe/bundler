@@ -168,7 +168,7 @@ function wpWipeEsBuildStyle(options) {
         const newPath = args.path.replace(/^@assets\//, "../assets/");
         return { path: newPath, external: true };
       });
-      build4.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp)$/ }, (args) => {
+      build4.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp|ttf|otf)$/ }, (args) => {
         return { path: args.path, external: true };
       });
       build4.onLoad({ filter: /.*\.s?css$/ }, async (args) => {
